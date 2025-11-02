@@ -1,0 +1,37 @@
+[package]
+authors = ["ihciah <ihciah@gmail.com>"]
+description = "A proxy to expose real tls handshake to the MITM."
+edition = "2021"
+keywords = ["proxy", "tls", "shadowsocks"]
+license = "MIT/Apache-2.0"
+name = "shadow-tls-windows"
+readme = "README.md"
+repository = "https://github.com/ihciah/shadow-tls"
+version = "0.2.25"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+tokio-rustls = "0.24"
+rustls = { version = "0.21", default-features = false }
+ring = "0.16"
+
+anyhow = "1"
+byteorder = "1"
+clap = { version = "4", features = ["derive"] }
+ctrlc = { version = "3", features = ["termination"] }
+hmac = "0.12"
+local-sync = "0.1.0"
+pin-project-lite = "0.2"
+rand = "0.8"
+rustc-hash = "1"
+sha1 = "0.10"
+sha2 = "0.10"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+webpki-roots = "0.25"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = true
+opt-level = 3
