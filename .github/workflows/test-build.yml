@@ -1,0 +1,61 @@
+name: Test Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-build:
+    name: Test Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libssl-dev
+
+    - name: Show Rust version
+      run: |
+        rustc --version
+        cargo --version
+
+    - name: Check Cargo.toml
+      run: |
+        echo "=== Cargo.toml ==="
+        cat Cargo.toml
+
+    - name: Cargo check
+      run: cargo check --verbose
+
+    - name: Cargo build
+      run: cargo build --verbose
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Show binary info
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          ls -la target/debug/shadow-tls-windows.exe
+          file target/debug/shadow-tls-windows.exe || echo "file command not available"
+        else
+          ls -la target/debug/shadow-tls-windows
+          file target/debug/shadow-tls-windows
+        fi
