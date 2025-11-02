@@ -45,6 +45,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y pkg-config libssl-dev
 
+    - name: Setup Windows environment
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "Setting up Windows build environment"
+        rustc --version --verbose
+
     - name: Cache cargo registry
       uses: actions/cache@v4
       with:

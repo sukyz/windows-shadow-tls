@@ -22,9 +22,11 @@ It works like [trojan](https://github.com/trojan-gfw/trojan) but it does not req
     修改 `docker-compose.yml` 后直接 `docker-compose up -d`。
 2. 使用预编译的二进制
 
-    从 [Release 页面](https://github.com/ihciah/shadow-tls/releases)下载对应平台的二进制文件, 然后运行即可。运行指南可以 `./shadow-tls client --help` 或 `./shadow-tls server --help` 看到。
+    从 [Release 页面](https://github.com/sukyz/windows-shadow-tls/releases)下载对应平台的二进制文件, 然后运行即可。运行指南可以 `./shadow-tls-windows-x86_64.exe client --help` 或 `./shadow-tls-windows-x86_64.exe server --help` 看到。
 
-更详细的使用指南请参考 [Wiki](https://github.com/ihciah/shadow-tls/wiki/How-to-Run)。
+⚠️ **Windows兼容性**: 如果在Windows上遇到"与64位Windows不兼容"错误，请查看 [Windows兼容性指南](WINDOWS-COMPATIBILITY.md)
+
+更详细的使用指南请参考 [快速开始指南](QUICK-START.md)。
 
 ---
 

@@ -1,0 +1,159 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows-build:
+    name: Build Windows Binary
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+
+    - name: Show system info
+      run: |
+        echo "Windows version:"
+        systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+        echo "Rust version:"
+        rustc --version --verbose
+        echo "Cargo version:"
+        cargo --version
+        echo "Target info:"
+        rustc --print target-list | findstr windows
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: windows-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          windows-cargo-registry-
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: windows-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          windows-cargo-index-
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: windows-x86_64-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          windows-x86_64-cargo-build-
+
+    - name: Check dependencies
+      run: cargo tree
+
+    - name: Build debug version first
+      run: cargo build --target x86_64-pc-windows-msvc --verbose
+
+    - name: Test debug binary
+      run: |
+        echo "Testing debug binary:"
+        .\target\x86_64-pc-windows-msvc\debug\shadow-tls-windows.exe --version
+        .\target\x86_64-pc-windows-msvc\debug\shadow-tls-windows.exe --help
+
+    - name: Build release version
+      run: cargo build --release --target x86_64-pc-windows-msvc --verbose
+
+    - name: Test release binary
+      run: |
+        echo "Testing release binary:"
+        .\target\x86_64-pc-windows-msvc\release\shadow-tls-windows.exe --version
+        .\target\x86_64-pc-windows-msvc\release\shadow-tls-windows.exe --help
+
+    - name: Check binary properties
+      run: |
+        echo "Binary file info:"
+        dir .\target\x86_64-pc-windows-msvc\release\shadow-tls-windows.exe
+        echo "File type check:"
+        file .\target\x86_64-pc-windows-msvc\release\shadow-tls-windows.exe 2>$null || echo "file command not available"
+
+    - name: Run tests
+      run: cargo test --release --target x86_64-pc-windows-msvc --verbose
+
+    - name: Prepare Windows artifact
+      run: |
+        echo "Preparing Windows artifact"
+        copy .\target\x86_64-pc-windows-msvc\release\shadow-tls-windows.exe .\shadow-tls-windows-x86_64.exe
+        dir .\shadow-tls-windows-x86_64.exe
+
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: shadow-tls-windows-x86_64.exe
+        path: shadow-tls-windows-x86_64.exe
+        retention-days: 30
+
+  create-release:
+    name: Create Release
+    needs: windows-build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: shadow-tls-windows-x86_64.exe
+
+    - name: List downloaded files
+      run: |
+        echo "Downloaded files:"
+        ls -la
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          shadow-tls-windows-x86_64.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## Shadow TLS Windows v${{ github.ref_name }}
+          
+          Windows-native version of Shadow TLS built on Windows environment.
+          
+          ### Downloads
+          - **Windows x64**: `shadow-tls-windows-x86_64.exe` (Native Windows build)
+          
+          ### Installation
+          1. Download `shadow-tls-windows-x86_64.exe`
+          2. Rename to `shadow-tls.exe` (optional)
+          3. Run from Command Prompt or PowerShell
+          
+          ### Quick Start
+          ```cmd
+          # Server mode
+          shadow-tls.exe server --listen 0.0.0.0:443 --server 127.0.0.1:8080 --tls cloudflare.com:443 --password your_password
+          
+          # Client mode  
+          shadow-tls.exe client --listen 127.0.0.1:1080 --server your_server:443 --sni cloudflare.com --password your_password
+          ```
+          
+          See [QUICK-START.md](https://github.com/sukyz/windows-shadow-tls/blob/main/QUICK-START.md) for detailed instructions.
+          
+          ### System Requirements
+          - Windows 10 x64 or later
+          - Windows Server 2019 x64 or later
+          - No additional runtime dependencies required
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
